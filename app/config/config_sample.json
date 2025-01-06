@@ -1,0 +1,8 @@
+{
+    "log_level": "INFO",
+    "cloudflare_api_token": "your_cloudflare_api_token",
+    "cloudflare_zone_id": "your_cloudflare_zone_id",
+    "test_interval": 60,
+    "rabbitmq_url": "amqp://guest:guest@localhost",
+    "rabbitmq_exchangeout": "exchangeout"
+}
