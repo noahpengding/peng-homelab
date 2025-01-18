@@ -1,23 +1,18 @@
-import unittest
-from app.minio_storage import MinioStorage
+import os
+import sys
 
-class MinioTest(unittest.TestCase):
-    def test_file_list(self):
-        m = MinioStorage()
-        files = m.file_list_name("peng", "Chat")
-        print(files)
-        self.assertTrue(len(files) > 0)
-    def test_file_download(self):
-        m = MinioStorage()
-        file_name = "20240928-011418_write_something_rand.json"
-        m.file_download("peng", f"Chat/{file_name}", "test.json")
-    '''
-    def test_upload_file(self):
-        m = MinioStorage()
-        file_name = "20240928-011947_write_a_poem_randoml.json"
-        m.file_upload("peng", file_name, f"Chat/{file_name}", "application/json")
-        self.assertTrue(m.file_exists("peng", f"Chat/{file_name}"))
-        '''
-
-if __name__ == '__main__':
-    unittest.main()
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from app.utils.minio_connection import MinioStorage
+m = MinioStorage()
+print(m.file_list_name(prefix="Chat"))
+with open("test.txt", "w") as f:
+    f.write("This is a test message")
+print(m.file_upload("test.txt", "test.txt", "text/plain"))
+print(m.file_list_name())
+print(m.file_download("test.txt", "test_download.txt"))
+os.remove("test.txt")
+print(m.file_list_name())
+print(m.remove_file("test.txt"))
+with open("test_download.txt", "r") as f:
+    print(f.read())
+os.remove("test_download.txt")
