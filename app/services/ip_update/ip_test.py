@@ -1,8 +1,8 @@
 import requests
-from app.config import config
-from app.cloudflare import Cloudflare
-from app.log import output_log
-from app.rabbitmq_publisher import RabbitMQPublisher
+from app.config.config import config
+from app.services.ip_update.cloudflare import Cloudflare
+from app.utils.log import output_log
+from app.utils.rabbitmq_publisher import RabbitMQPublisher
 
 times = -1
 

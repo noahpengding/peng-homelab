@@ -1,5 +1,5 @@
 import requests
-from app.log import output_log
+from app.utils.log import output_log
 
 class Cloudflare:
     def __init__(self, zone_id, api_token):

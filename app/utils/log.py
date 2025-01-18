@@ -1,7 +1,7 @@
 import logging
-from app.config import config
+from app.config.config import config
 
-logger = logging.getLogger("Peng")
+logger = logging.getLogger("peng-homelab")
 logger.setLevel(config.log_level)
 handler = logging.StreamHandler()
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -10,11 +10,11 @@ logger.addHandler(handler)
 
 def output_log(message, level):
     global logger
-    if level == 'warning':
+    if level.lower() == 'warning':
         logger.warning(message)
-    elif level == 'error':
+    elif level.lower() == 'error':
         logger.error(message)
-    elif level == 'debug':
+    elif level.lower() == 'debug':
         logger.debug(message)
     else:
         logger.info(message)

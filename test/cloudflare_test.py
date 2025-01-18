@@ -1,9 +1,9 @@
 import unittest
 from app.cloudflare import Cloudflare
-from app.config import config
+from app.config.config import config
 from app.ip_test import main
 from app.slack import Slack
-from app.config import config
+from app.config.config import config
 
 class TestCloudflare(unittest.TestCase):
     '''

@@ -3,7 +3,7 @@ from slack_sdk.errors import SlackApiError
 from slack_sdk.socket_mode import SocketModeClient
 from slack_sdk.socket_mode.request import SocketModeRequest
 from slack_sdk.socket_mode.response import SocketModeResponse
-from app.config import config
+from app.config.config import config
 from app.openai_api import OpenAIHandler
 from app.minio_storage import MinioStorage
 from app.read_file import FileReader
