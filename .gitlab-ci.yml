@@ -6,23 +6,27 @@ variables:
   IMAGE_TAG: $REGISTRY_URL/peng-bot/peng-homelab
 
 before_script:
-  - docker login -u $REGISTRY_USER -p $REGISTRY_PASS $REGISTRY_URL
+  - echo "{\"auths\":{\"$REGISTRY_URL\":{\"username\":\"$REGISTRY_USER\",\"password\":\"$REGISTRY_PASS\"}}}" > /kaniko/.docker/config.json
 
 test-build:
   stage: build
-  image: docker:23.0.6-dind
+  image:
+    name: gcr.io/kaniko-project/executor:debug
+    entrypoint: [""]
   tags:
-    - docker
+    - kubernetes
   script:
-    - docker build -t $IMAGE_TAG:test .
+    - /kaniko/executor --context $CI_PROJECT_DIR --dockerfile Dockerfile --destination $IMAGE_TAG:test
 
 prod-build:
   stage: build
-  image: docker:23.0.6-dind
+  image:
+    name: gcr.io/kaniko-project/executor:debug
+    entrypoint: [""]
   tags:
-    - docker
+    - kubernetes
   script:
-    - docker build -t $IMAGE_TAG:$APP_VERSION -t $IMAGE_TAG:latest .
+    - /kaniko/executor --context $CI_PROJECT_DIR --dockerfile Dockerfile --destination $IMAGE_TAG:$APP_VERSION --destination $IMAGE_TAG:latest
   only:
     variables:
       - $CI_COMMIT_BRANCH == "main"
