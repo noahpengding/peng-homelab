@@ -6,7 +6,7 @@ variables:
   IMAGE_TAG: $REGISTRY_URL/peng-bot/peng-homelab
 
 before_script:
-  - echo $REGISTRY_PASS | docker login $REGISTRY_URL -u $REGISTRY_USER --password-stdin;
+  - docker login -u $REGISTRY_USER -p $REGISTRY_PASS $REGISTRY_URL
 
 test-build:
   stage: build
