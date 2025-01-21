@@ -6,29 +6,21 @@ variables:
   IMAGE_TAG: $REGISTRY_URL/peng-bot/peng-homelab
 
 before_script:
-  - if [[ "$CI_RUNNER_TAGS" == *"Docker"* ]]; then
-      echo $REGISTRY_PASS | docker login $REGISTRY_URL -u $REGISTRY_USER --password-stdin;
-    else
-      echo "{\"auths\":{\"$REGISTRY_URL\":{\"username\":\"$REGISTRY_USER\",\"password\":\"$REGISTRY_PASS\"}}}" > /kaniko/.docker/config.json;
-    fi
+  - echo $REGISTRY_PASS | docker login $REGISTRY_URL -u $REGISTRY_USER --password-stdin;
 
 test-build:
   stage: build
+  tags:
+    - docker
   script:
-    - if [[ "$CI_RUNNER_TAGS" == *"Docker"* ]]; then
-        docker build -t $IMAGE_TAG:test .;
-      else
-        /kaniko/executor --context $CI_PROJECT_DIR --dockerfile Dockerfile --destination $IMAGE_TAG:test;
-      fi
+    - docker build -t $IMAGE_TAG:test .;
 
 prod-build:
   stage: build
+  tags:
+    - docker
   script:
-    - if [[ "$CI_RUNNER_TAGS" == *"Docker"* ]]; then
-        docker build -t $IMAGE_TAG:$APP_VERSION -t $IMAGE_TAG:latest .;
-      else
-        /kaniko/executor --context $CI_PROJECT_DIR --dockerfile Dockerfile --destination $IMAGE_TAG:$APP_VERSION --destination $IMAGE_TAG:latest --build-arg opts="CGO_ENABLED=0 GOARCH=amd64";
-      fi
+    - docker build -t $IMAGE_TAG:$APP_VERSION -t $IMAGE_TAG:latest .;
   only:
     variables:
       - $CI_COMMIT_BRANCH == "main"
