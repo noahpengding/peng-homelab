@@ -37,7 +37,7 @@ class RabbitMQConsumer:
             try:
                 callback(body)
             except Exception as e:
-                output_log(f"Error in message consumpting: {e}", 'error')
+                output_log(f"Error in message consumpting: {e} | {body}", 'error')
             finally:
                 self.channel.basic_ack(delivery_tag=method_frame.delivery_tag)
         else:

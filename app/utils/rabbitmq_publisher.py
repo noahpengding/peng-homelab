@@ -21,7 +21,7 @@ class RabbitMQPublisher:
             "ID": str(uuid.uuid4()),
             "Topic": exchange,
             "Data": message,
-            "Channel": "test"
+            "Channel": config.rabbitmq_exchangedefault
         }
         output_log(f"Publishing message: {body}", 'debug')
         self.channel.basic_publish(
