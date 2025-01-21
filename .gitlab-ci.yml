@@ -10,6 +10,7 @@ before_script:
 
 test-build:
   stage: build
+  image: docker:23.0.6-dind
   tags:
     - docker
   script:
@@ -17,6 +18,7 @@ test-build:
 
 prod-build:
   stage: build
+  image: docker:23.0.6-dind
   tags:
     - docker
   script:
