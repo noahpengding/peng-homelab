@@ -18,6 +18,9 @@ def upgrade(app: Deployment) -> Deployment:
         config.git_repo.replace("https://", f"https://oauth2:{config.git_pass}@"),
         config.local_repo
     )
+    repo.config_writer().set_value("user", "email", "bot@dingyipeng.com").release()
+    repo.config_writer().set_value("user", "name", "Bot").release()
+
     app_info = app.get_deployment()
     for change in app_info["changes"]:
         new_change = _update_file(config.local_repo, change, app_info["current_version"], app_info["latest_version"])
@@ -35,6 +38,7 @@ def _update_file(local_location: str, change: dict, old_version:str, new_version
     try:
         with open(f"{local_location}/{change["file"]}", "r") as f:
             data = list(yaml.safe_load_all(f))
+        data_remain = data[1:] if len(data) >= 1 else []
         data = data[0] if len(data) >= 1 else data
         original_value = change["value"]
         change["value"] = original_value.replace(old_version, new_version)
@@ -44,8 +48,8 @@ def _update_file(local_location: str, change: dict, old_version:str, new_version
             key = key.replace("[", "").replace("]", "")
             target = target[int(key)] if key.isdigit() else target[key]
         target[keys[-1]] = change["value"]
-        with open(f"{local_location}/{change["file"]}", "w") as f:
-            yaml.dump(data, f)
+        with open(f"{local_location}/{change['file']}", "w") as f:
+            yaml.dump_all([data] + data_remain, f, default_flow_style=False, explicit_start=True)
         return Changes(**change)
     except Exception as e:
         output_log(f"Error in updating file {change['file']} in {local_location} from {old_version} to {new_version}: {e}", "error")
