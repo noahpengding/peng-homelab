@@ -33,6 +33,7 @@ class ImapEmailChecker:
             self.mail = imaplib.IMAP4_SSL(self.imap_server, self.imap_port)
             # Authenticate
             self.mail.login(self.email_address, self.password)
+            self.mail.select("INBOX")
             return True
         except Exception as e:
             print(f"Connection error: {e}")
@@ -41,8 +42,8 @@ class ImapEmailChecker:
     def disconnect(self) -> None:
         """Close the connection to the IMAP server."""
         if self.mail:
-            self.mail.logout()
             self.mail.close()
+            self.mail.logout()
     
     def get_unread_emails(self, mailbox: str = "INBOX") -> List[Dict[str, Any]]:
         """
