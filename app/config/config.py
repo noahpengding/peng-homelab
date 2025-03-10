@@ -11,14 +11,11 @@ class Config(BaseModel):
     rabbitmq_url: str
     rabbitmq_exchangeout: str
     rabbitmq_exchangedefault: str
-    s3_url: str
-    s3_bucket: str
-    s3_access_key: str
-    s3_secret_key: str
-    deployment_file: str
-    git_repo: str
-    git_pass: str
-    local_repo: str
+    imap_server: str
+    imap_port: int
+    imap_user: str
+    imap_password: str
+
 
 try:
     config_path = os.path.join(os.path.dirname(__file__), 'config.json')
@@ -37,15 +34,10 @@ try:
         "rabbitmq_url": os.environ.get('rabbitmq_url') if os.environ.get('rabbitmq_url') else "amqp://guest:guest@localhost:5672/",
         "rabbitmq_exchangeout": os.environ.get('rabbitmq_exchangeout') if os.environ.get('rabbitmq_exchangeout') else "output",
         "rabbitmq_exchangedefault": os.environ.get('rabbitmq_exchangedefault') if os.environ.get('rabbitmq_exchangedefault') else "default",
-        "s3_url": os.environ.get('s3_url') if os.environ.get('s3_url') else "http://localhost:9000",
-        "s3_bucket": os.environ.get('s3_bucket') if os.environ.get('s3_bucket') else "test",
-        "s3_access_key": os.environ.get('s3_access_key') if os.environ.get('s3_access_key') else "minioadmin",
-        "s3_secret_key": os.environ.get('s3_secret_key') if os.environ.get('s3_secret_key') else "minioadmin",
-        "s3_region": os.environ.get('s3_region') if os.environ.get('s3_region') else "us-east-1",
-        "deployment_file": os.environ.get('deployment_file') if os.environ.get('deployment_file') else "deployments.json",
-        "git_repo": os.environ.get('git_repo') if os.environ.get('git_repo') else "",
-        "git_pass": os.environ.get('git_pass') if os.environ.get('git_pass') else "password",
-        "local_repo": os.environ.get('local_repo') if os.environ.get('local_repo') else "tmp"
+        "imap_server": os.environ.get('imap_server') if os.environ.get('imap_server') else "imap.gmail.com",
+        "imap_port": int(os.environ.get('imap_port')) if os.environ.get('imap_port') else 993,
+        "imap_user": os.environ.get('imap_user') if os.environ.get('imap_user') else "",
+        "imap_password": os.environ.get('imap_password') if os.environ.get('imap_password') else ""
     }
     for key, value in env_vars.items():
         if value is not None:

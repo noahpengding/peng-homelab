@@ -6,7 +6,7 @@ from app.utils.rabbitmq_publisher import RabbitMQPublisher
 
 times = -1
 
-def __access_check():
+def _access_check():
     try:
         response = requests.get("https://traefik.tenawalcott.com", timeout=5)
         output_log(response.status_code, "debug")
@@ -14,16 +14,16 @@ def __access_check():
     except requests.exceptions.RequestException as e:
         return 500
 
-def __ip_check():
+def _ip_check():
     response = requests.get("https://api.ipify.org?format=json", timeout=5)
     return response.json()["ip"]
 
 def ip_test_main():
     global times
-    if __access_check() != 200:
+    if _access_check() != 200:
         output_log(f"Access Check Failed with code {__access_check()}", "error")
         zone_ids = config.cloudflare_zone_id
-        new_ip = __ip_check()
+        new_ip = _ip_check()
         cf = Cloudflare(zone_ids[0], config.cloudflare_api_token[0])
         current_ip = cf.get_dns_record("traefik.tenawalcott.com")["content"]
         if current_ip == new_ip:
