@@ -17,3 +17,4 @@ def email_check():
         output_log(f"Email Received: {email['subject']}", "info")
 
     email_checker.disconnect()
+    output_log("Email Check Done", "info")
