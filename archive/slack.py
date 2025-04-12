@@ -12,13 +12,18 @@ from app.message_format import format_message
 import time
 import json
 
+
 class Slack:
     def __init__(self):
         self.token = config.slack_token
         self.app_token = config.slack_socket_token
         self.client = WebClient(token=self.token)
-        self.socket_client = SocketModeClient(app_token=self.app_token, web_client=self.client)
-        self.socket_client.socket_mode_request_listeners.append(self.handle_socket_mode_request)
+        self.socket_client = SocketModeClient(
+            app_token=self.app_token, web_client=self.client
+        )
+        self.socket_client.socket_mode_request_listeners.append(
+            self.handle_socket_mode_request
+        )
         self.openai = OpenAIHandler("USLACKBOT")
         self.minio_storage = MinioStorage()
 
@@ -26,8 +31,7 @@ class Slack:
         try:
             text = str(format_message(text))
             response = self.client.chat_postMessage(
-                channel=config.channel_id,
-                text=text
+                channel=config.channel_id, text=text
             )
             output_log(response, "debug")
         except SlackApiError as e:
@@ -37,44 +41,30 @@ class Slack:
         try:
             text = str(format_message(text))
             response = self.client.chat_postMessage(
-                channel=channel,
-                text=text,
-                mrkdwn=True
+                channel=channel, text=text, mrkdwn=True
             )
             output_log(response, "debug")
         except SlackApiError as e:
             output_log(e.response["error"], "error")
-    
+
     def send_local_image(self, channel, image_path, message):
         try:
             response = self.client.files_upload(
-                channels=channel,
-                file=image_path,
-                initial_comment=message
+                channels=channel, file=image_path, initial_comment=message
             )
             output_log(response, "debug")
         except SlackApiError as e:
             output_log(e.response["error"], "error")
-    
+
     def send_image_with_channel(self, channel, image, message):
         try:
             response = self.client.chat_postMessage(
                 channel=channel,
                 text=message,
                 blocks=[
-                {
-                    "type": "section",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": message
-                    }
-                },
-                {
-                    "type": "image",
-                    "image_url": image,
-                    "alt_text": message
-                }
-                ]
+                    {"type": "section", "text": {"type": "mrkdwn", "text": message}},
+                    {"type": "image", "image_url": image, "alt_text": message},
+                ],
             )
             assert response["message"]["text"] == message
         except SlackApiError as e:
@@ -93,15 +83,25 @@ class Slack:
             topic = chat_name
         file_name = f"{date}_{topic}.json"
         response = "Conversation ended. File not saved."
-        if chat_name.lower() != "not save" and chat_name.lower() != "no save" and chat_name.lower() != "don't save":
+        if (
+            chat_name.lower() != "not save"
+            and chat_name.lower() != "no save"
+            and chat_name.lower() != "don't save"
+        ):
             with open(file_name, "w") as f:
                 json.dump(conversation, f)
-            self.minio_storage.file_upload(bucket_name, file_name, f"Chat/{file_name}", "application/json")
-            response = f"Conversation ended. File uploaded to {bucket_name}/{file_name}."
+            self.minio_storage.file_upload(
+                bucket_name, file_name, f"Chat/{file_name}", "application/json"
+            )
+            response = (
+                f"Conversation ended. File uploaded to {bucket_name}/{file_name}."
+            )
         self.openai.end_conversation()
         return response
 
-    def list_conversations(self, bucket_name=config.minio_default_bucket, folder_name="Chat"):
+    def list_conversations(
+        self, bucket_name=config.minio_default_bucket, folder_name="Chat"
+    ):
         output_log(f"Listing conversations in {bucket_name}/{folder_name}", "debug")
         conversation = self.minio_storage.file_list_name(bucket_name, folder_name)
         output_log(f"Conversations: {conversation}", "debug")
@@ -141,13 +141,13 @@ class Slack:
         self.send_message_with_channel(channel, f"{user_name}: {text}")
         response = ""
         command = text.lower().split()[0]
-        text = ' '.join(text.split()[1:])
+        text = " ".join(text.split()[1:])
         output_log(f"Received message: {command}: {text}", "debug")
         if command == "share":
             response = self.share_file(text)
         elif command == "get":
             response = str(self.openai.get_coversions())
-        elif command == "chat": 
+        elif command == "chat":
             response = self.openai.create_chat_completion(text.strip())
         elif command == "end":
             response = self.end_conversation(text.strip())
@@ -190,9 +190,17 @@ class Slack:
             return "Invalid command. Usage: chat set <parameter>=<value>"
         if params[0] in ["chat", "conversation"]:
             location = params[1]
-            bucket_name = location.split("://")[0] if len(location.split("://")) > 1 else config.minio_default_bucket
-            file_name = location.split("://")[1] if len(location.split("://")) > 1 else location
-            file_name = f"Chat/{file_name}" if not len(file_name.split("/")) > 1 else file_name
+            bucket_name = (
+                location.split("://")[0]
+                if len(location.split("://")) > 1
+                else config.minio_default_bucket
+            )
+            file_name = (
+                location.split("://")[1] if len(location.split("://")) > 1 else location
+            )
+            file_name = (
+                f"Chat/{file_name}" if not len(file_name.split("/")) > 1 else file_name
+            )
             self.minio_storage.file_download(bucket_name, file_name, "temp.json")
             with open("temp.json", "rb") as f:
                 params[1] = json.load(f)
@@ -207,7 +215,9 @@ class Slack:
         self.send_image_with_channel(channel, image, text)
         return ""
 
-    def handle_socket_mode_request(self, client: SocketModeClient, req: SocketModeRequest):
+    def handle_socket_mode_request(
+        self, client: SocketModeClient, req: SocketModeRequest
+    ):
         output_log(f"Received request: {req.type}", "info")
         if req.type == "events_api" or req.type == "slash_commands":
             response = SocketModeResponse(envelope_id=req.envelope_id)
