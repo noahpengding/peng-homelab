@@ -1,7 +1,7 @@
 import imaplib
 import email
 from email.header import decode_header
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional, Tuple
 
 
 class ImapEmailChecker:
@@ -79,7 +79,7 @@ class ImapEmailChecker:
                 if email_data:
                     email_list.append(email_data)
                     # Mark as read
-                    self.mail.store(message_id, '+FLAGS', '\\Seen')
+                    # self.mail.store(message_id, '+FLAGS', '\\Seen')
             
             return email_list
         
@@ -115,17 +115,22 @@ class ImapEmailChecker:
             # Get email date
             date = msg["Date"]
             
-            # Get email body
+            # Get email body and attachments
             body = ""
+            attachments = []
+            
             if msg.is_multipart():
-                # If the email has multiple parts, find the text/plain part
+                # If the email has multiple parts, process each part
                 for part in msg.walk():
                     content_type = part.get_content_type()
                     content_disposition = str(part.get("Content-Disposition"))
                     
                     if content_type == "text/plain" and "attachment" not in content_disposition:
                         body = self._get_email_body(part)
-                        break
+                    elif "attachment" in content_disposition:
+                        attachment = self._extract_attachment(part)
+                        if attachment:
+                            attachments.append(attachment)
             else:
                 # If the email is not multipart, just get the body
                 body = self._get_email_body(msg)
@@ -135,7 +140,8 @@ class ImapEmailChecker:
                 "subject": subject,
                 "from": from_address,
                 "date": date,
-                "body": body
+                "body": body,
+                "attachments": attachments
             }
         
         except Exception as e:
@@ -192,3 +198,38 @@ class ImapEmailChecker:
             else:
                 return payload.decode('utf-8', errors='replace')
         return ""
+    
+    def _extract_attachment(self, part) -> Optional[Dict[str, Any]]:
+        """
+        Extract an attachment from an email message part.
+        
+        Args:
+            part: The email message part containing an attachment
+            
+        Returns:
+            Optional[Dict[str, Any]]: Dictionary with attachment filename and content,
+                                    or None if extraction fails
+        """
+        try:
+            # Get the attachment filename
+            filename = part.get_filename()
+            if not filename:
+                # If no filename is provided, try to generate a generic one
+                content_type = part.get_content_type().replace('/', '_')
+                filename = f"attachment_{content_type}"
+            
+            # Decode filename if needed
+            if filename:
+                filename = self._decode_email_header(filename)
+            
+            # Get attachment content
+            content = part.get_payload(decode=True)
+            
+            # Return the attachment data
+            return {
+                "filename": filename,
+                "content": content
+            }
+        except Exception as e:
+            print(f"Error extracting attachment: {e}")
+            return None

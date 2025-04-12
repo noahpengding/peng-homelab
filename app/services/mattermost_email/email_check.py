@@ -1,4 +1,4 @@
-from app.services.email_check.imap_email_checker import ImapEmailChecker
+from app.utils.imap_email_checker import ImapEmailChecker
 from app.config.config import config
 from app.utils.log import output_log
 from app.utils.rabbitmq_publisher import RabbitMQPublisher
