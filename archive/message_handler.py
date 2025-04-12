@@ -7,6 +7,7 @@ from app.models.deployment import Deployment
 from app.services.updater.update_handler import update_all_handler, update_handler
 from app.utils.log import output_log
 
+
 def RabbitMQMessageHandler(data):
     data = json.loads(data.decode("utf-8"))["data"]
     message_type = data["type"]
@@ -22,8 +23,12 @@ def RabbitMQMessageHandler(data):
         app, name = message.split(".")
         upgrade_handler(app, name)
     if message_type == "set_app":
-        if (type(message) == str):
-            message = ast.literal_eval(message.replace("null", "None").replace("true", "True").replace("false", "False"))
+        if type(message) == str:
+            message = ast.literal_eval(
+                message.replace("null", "None")
+                .replace("true", "True")
+                .replace("false", "False")
+            )
         new_deployment = Deployment(**message)
         save_deployment(new_deployment)
     if message_type == "update":

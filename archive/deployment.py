@@ -3,27 +3,61 @@ from datetime import datetime
 from .changes import Changes
 from app.utils.log import output_log
 
-class Deployment:
 
+class Deployment:
     def __init__(self, **kwargs):
         self.id = str(uuid.uuid4())
         self.app = kwargs.get("app")
         self.name = kwargs.get("name")
-        self.argo_app = kwargs.get("argo_app") if kwargs.get("argo_app") else kwargs.get("app")
+        self.argo_app = (
+            kwargs.get("argo_app") if kwargs.get("argo_app") else kwargs.get("app")
+        )
         self.status = kwargs.get("status") if kwargs.get("status") else "Unknown"
         self.image_url = kwargs.get("image_url") if kwargs.get("image_url") else ""
-        self.image_chart_name = kwargs.get("image_chart_name") if kwargs.get("image_chart_name") else ""
-        self.image_check_method = kwargs.get("image_check_method") if kwargs.get("image_check_method") else "Docker"
-        self.current_version = kwargs.get("current_version") if kwargs.get("current_version") else ""
-        self.latest_version = kwargs.get("latest_version") if kwargs.get("latest_version") else ""
-        self.target_version = kwargs.get("target_version") if kwargs.get("target_version") else "latest"
+        self.image_chart_name = (
+            kwargs.get("image_chart_name") if kwargs.get("image_chart_name") else ""
+        )
+        self.image_check_method = (
+            kwargs.get("image_check_method")
+            if kwargs.get("image_check_method")
+            else "Docker"
+        )
+        self.current_version = (
+            kwargs.get("current_version") if kwargs.get("current_version") else ""
+        )
+        self.latest_version = (
+            kwargs.get("latest_version") if kwargs.get("latest_version") else ""
+        )
+        self.target_version = (
+            kwargs.get("target_version") if kwargs.get("target_version") else "latest"
+        )
         self.hold_flag = kwargs.get("hold_flag") if kwargs.get("hold_flag") else False
-        self.auto_update = kwargs.get("auto_update") if kwargs.get("auto_update") else True
-        self.auto_upgrade = kwargs.get("auto_upgrade") if kwargs.get("auto_upgrade") else True
-        self.changes = [Changes(**change) for change in kwargs.get("changes")] if kwargs.get("changes") else []
-        self.document_url = kwargs.get("document_url") if kwargs.get("document_url") else kwargs.get("image_url")
-        self.last_upgrade = datetime.strptime(kwargs.get("last_upgrade"), "%m/%d/%Y, %H:%M:%S") if kwargs.get("last_upgrade") else datetime.now()
-        self.last_update = datetime.strptime(kwargs.get("last_upgrade"), "%m/%d/%Y, %H:%M:%S") if kwargs.get("last_update") else datetime.now()
+        self.auto_update = (
+            kwargs.get("auto_update") if kwargs.get("auto_update") else True
+        )
+        self.auto_upgrade = (
+            kwargs.get("auto_upgrade") if kwargs.get("auto_upgrade") else True
+        )
+        self.changes = (
+            [Changes(**change) for change in kwargs.get("changes")]
+            if kwargs.get("changes")
+            else []
+        )
+        self.document_url = (
+            kwargs.get("document_url")
+            if kwargs.get("document_url")
+            else kwargs.get("image_url")
+        )
+        self.last_upgrade = (
+            datetime.strptime(kwargs.get("last_upgrade"), "%m/%d/%Y, %H:%M:%S")
+            if kwargs.get("last_upgrade")
+            else datetime.now()
+        )
+        self.last_update = (
+            datetime.strptime(kwargs.get("last_upgrade"), "%m/%d/%Y, %H:%M:%S")
+            if kwargs.get("last_update")
+            else datetime.now()
+        )
 
     def update(self, version: str) -> None:
         self.latest_version = version
@@ -81,5 +115,5 @@ class Deployment:
             "changes": [change.get_changes() for change in self.changes],
             "document_url": self.document_url,
             "last_upgrade": self.last_upgrade.strftime("%m/%d/%Y, %H:%M:%S"),
-            "last_update": self.last_update.strftime("%m/%d/%Y, %H:%M:%S")
+            "last_update": self.last_update.strftime("%m/%d/%Y, %H:%M:%S"),
         }

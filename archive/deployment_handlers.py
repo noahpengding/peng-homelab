@@ -5,6 +5,7 @@ from app.utils.log import output_log
 import json
 import os
 
+
 def get_all_deployments() -> list:
     m = MinioStorage()
     m.file_download(config.deployment_file, "tmp.json")
@@ -13,7 +14,8 @@ def get_all_deployments() -> list:
     if deployment_check(deployment_json):
         return [Deployment(**deployment) for deployment in deployment_json]
 
-def get_deployment_by_name(app:str, name: str) -> Deployment:
+
+def get_deployment_by_name(app: str, name: str) -> Deployment:
     m = MinioStorage()
     m.file_download(config.deployment_file, "tmp.json")
     deployment_json = json.load(open("tmp.json"))
@@ -22,9 +24,10 @@ def get_deployment_by_name(app:str, name: str) -> Deployment:
         try:
             if deployment["app"] == app and deployment["name"] == name:
                 return Deployment(**deployment)
-        except Exception as e:
+        except Exception:
             continue
     return None
+
 
 def deployment_check(deployment):
     for deploy in deployment:
@@ -34,6 +37,7 @@ def deployment_check(deployment):
         except Exception as e:
             output_log(f"Deployment check failed: {e}", "error")
             return False
+
 
 def save_deployment(deployment: Deployment) -> None:
     m = MinioStorage()
