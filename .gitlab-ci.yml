@@ -5,6 +5,15 @@ variables:
   IMAGE_NAME: $CI_REGISTRY/peng-bot/peng-homelab
   VERSION: v1.2.0
 
+test-x64:
+  image: docker:23.0.6-dind
+  stage: build
+  script:
+    - docker build --platform linux/amd64 -t $IMAGE_NAME:$VERSION-nightly .
+    - docker run --rm $IMAGE_NAME:$VERSION-nightly --version
+  tags:
+    - docker
+
 build-x64:
   image: docker:23.0.6-dind
   stage: build
