@@ -1,5 +1,8 @@
 - @azure Rule - Use Azure Best Practices: When generating code for Azure, running terminal commands for Azure, or performing operations related to Azure, invoke your `azure_development-get_best_practices` tool if available.
 - Always use uv + pyproject.toml to manage python project dependencies
+- Use pyproject.toml to understand python version and dependencies
+- Use "source .venv/bin/activate" to avtivate the python environment
+- Refer to the [uv](https://github.com/astral-sh/uv) document for adding and removing packages
 - When using "request" in python, always retry for five times if failed
 - Never read or use code from "archive" folder
 - Always try to use a centralized config file to manage all global configurations
