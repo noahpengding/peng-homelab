@@ -10,6 +10,7 @@ test-x64:
   stage: build
   script:
     - docker build --platform linux/amd64 -t $IMAGE_NAME:$VERSION-nightly .
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
     - docker push $IMAGE_NAME:$VERSION-nightly
   tags:
     - docker
