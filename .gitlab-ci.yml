@@ -10,7 +10,7 @@ test-x64:
   stage: build
   script:
     - docker build --platform linux/amd64 -t $IMAGE_NAME:$VERSION-nightly .
-    - docker run --rm $IMAGE_NAME:$VERSION-nightly --version
+    - docker push $IMAGE_NAME:$VERSION-nightly
   tags:
     - docker
 
