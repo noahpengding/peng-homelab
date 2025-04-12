@@ -9,5 +9,12 @@
     "imap_server": "imap.gmail.com",
     "imap_port": 993,
     "imap_user": "",
-    "imap_password": ""
+    "imap_password": "",
+    "vaultwarden_client_id": "user.521d1f79-d55f-4f7e-86c8-cfb17ded7fd9",
+    "vaultwarden_client_secret": "dFd14BmpmaInbZlXkmtfgiPEqAtH77",
+    "vaultwarden_host": "https://vaultwarden.example.com",
+    "schedule_check_email_address": "scheduler@example.com",
+    "smtp_server": "smtp.gmail.com",
+    "smtp_port": 465,
+    "smtp_use_ssl": true
 }
