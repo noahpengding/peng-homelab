@@ -1,13 +1,11 @@
-FROM python:3.12.8-slim-bullseye
+FROM python:3.11.11-slim-bullseye
 
-WORKDIR /
+WORKDIR /app
 
-COPY requirements.txt /
-RUN apt update && apt install -y git && apt-get clean
-RUN pip install --no-cache-dir -r requirements.txt
+COPY pyproject.toml uv.lock ./
 
-COPY ./app /app
-COPY main.py /
+RUN pip install --no-cache-dir uv>=0.6.6
+RUN uv venv .venv && uv pip install .
 
 ENV TZ=America/Toronto
 
@@ -16,4 +14,6 @@ RUN apt-get update && apt-get install -y tzdata && \
     dpkg-reconfigure -f noninteractive tzdata && \
     apt-get clean
 
-CMD ["python", "/main.py"]
+COPY . .
+
+CMD ["uv", "run", "/app/main.py"]
