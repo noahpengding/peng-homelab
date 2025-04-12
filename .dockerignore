@@ -4,3 +4,11 @@ config/config.json
 *__pycache__*
 venv
 archive
+.git
+.github
+doc
+*.yaml
+*.yml
+*.md
+LICENSE
+Dockerfile

@@ -1,5 +1,5 @@
 import re
-from app.utils.log import output_log
+
 
 def format_message(message):
     modified_message = re.sub(r"\*\*", "*", message)
