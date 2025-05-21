@@ -21,7 +21,7 @@ def _ip_check():
 def ip_test_main():
     global times
     if _access_check() != 200:
-        output_log(f"Access Check Failed with code {__access_check()}", "error")
+        output_log(f"Access Check Failed with code {_access_check()}", "error")
         zone_ids = config.cloudflare_zone_id
         new_ip = _ip_check()
         cf = Cloudflare(zone_ids[0], config.cloudflare_api_token[0])

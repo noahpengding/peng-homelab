@@ -1,6 +1,6 @@
 [project]
 name = "Peng-Homelab"
-version = "1.1.2"
+version = "1.2.1"
 description = "A Homelab Management Application"
 authors = [
     { name = "Noah Ding", email = "noah@dingyipeng.com" },

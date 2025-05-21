@@ -5,7 +5,8 @@ WORKDIR /app
 COPY pyproject.toml uv.lock ./
 
 RUN pip install --no-cache-dir uv>=0.6.6
-RUN uv venv .venv && uv pip install .
+RUN uv venv .venv
+RUN uv pip install .
 
 ENV TZ=America/Toronto
 
@@ -16,4 +17,4 @@ RUN apt-get update && apt-get install -y tzdata && \
 
 COPY . .
 
-CMD ["uv", "run", "/app/main.py"]
+CMD ["uv", "run", "--active", "/app/main.py"]
