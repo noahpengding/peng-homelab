@@ -5,12 +5,12 @@ from typing import List
 
 class Config(BaseModel):
     log_level: str
-    cloudflare_zone_id: List[str]
-    cloudflare_api_token: List[str]
-    test_interval: int
-    rabbitmq_url: str
-    rabbitmq_exchangeout: str
-    rabbitmq_exchangedefault: str
+    app_name: str = "Peng-Homelab"
+    host: str
+    port: int
+    admin_password: str
+    jwt_secret_key: str
+    # IMAP configuration
     imap_server: str
     imap_port: int = 993
     imap_user: str
@@ -32,6 +32,7 @@ class Config(BaseModel):
     s3_access_key: str
     s3_secret_key: str
     s3_bucket: str
+    s3_base_path: str
     email_path: str
 
 
@@ -39,28 +40,11 @@ try:
     config_data = {}
     env_vars = {
         "log_level": os.environ.get("log_level") or "INFO",
-        "cloudflare_zone_id": (
-            (os.environ.get("cloudflare_zone_id")).split(", ")
-            if os.environ.get("cloudflare_zone_id")
-            else []
-        ),
-        "cloudflare_api_token": (
-            (os.environ.get("cloudflare_api_token")).split(", ")
-            if os.environ.get("cloudflare_api_token")
-            else []
-        ),
-        "test_interval": int(os.environ.get("test_interval"))
-        if os.environ.get("test_interval")
-        else 10,
-        "rabbitmq_url": os.environ.get("rabbitmq_url")
-        if os.environ.get("rabbitmq_url")
-        else "amqp://guest:guest@localhost:5672/",
-        "rabbitmq_exchangeout": os.environ.get("rabbitmq_exchangeout")
-        if os.environ.get("rabbitmq_exchangeout")
-        else "output",
-        "rabbitmq_exchangedefault": os.environ.get("rabbitmq_exchangedefault")
-        if os.environ.get("rabbitmq_exchangedefault")
-        else "default",
+        "app_name": os.environ.get("app_name") or "Peng-Homelab",
+        "host": os.environ.get("host") if os.environ.get("host") else "0.0.0.0",
+        "port": int(os.environ.get("port")) if os.environ.get("port") else 8000,
+        "admin_password": os.environ.get("admin_password") if os.environ.get("admin_password") else "admin123",
+        "jwt_secret_key": os.environ.get("jwt_secret_key") if os.environ.get("jwt_secret_key") else "your_secret_key",
         "imap_server": os.environ.get("imap_server")
         if os.environ.get("imap_server")
         else "imap.gmail.com",
@@ -116,6 +100,7 @@ try:
         if os.environ.get("s3_secret_key")
         else "",
         "s3_bucket": os.environ.get("s3_bucket") if os.environ.get("s3_bucket") else "",
+        "s3_base_path": os.environ.get("s3_base_path") if os.environ.get("s3_base_path") else "homelab",
         "email_path": os.environ.get("email_path")
         if os.environ.get("email_path")
         else "/tmp",
@@ -124,8 +109,6 @@ try:
         if value is not None:
             config_data[key] = value
     config = Config(**config_data)
-    if len(config.cloudflare_zone_id) != len(config.cloudflare_api_token):
-        raise ValidationError
 except ValidationError as e:
     print("Configuration error:", e)
     raise
