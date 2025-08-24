@@ -1,7 +1,0 @@
-import re
-
-
-def format_message(message):
-    modified_message = re.sub(r"\*\*", "*", message)
-    modified_message = re.sub(r"#+(.*)\n", r"*\1*\n", modified_message)
-    return modified_message
