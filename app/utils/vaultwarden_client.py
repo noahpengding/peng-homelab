@@ -68,16 +68,15 @@ class BitwardenClient:
             raise e
 
     def get_ciphers(self, collection_id) -> list[BitwardenData]:
-        ciphers = self._organization.ciphers(self._collections.get(collection_id).Id)
+        ciphers = self._organization.ciphers(self._collections.get(collection_id).Id, force_refresh=True)
         result = []
         for cipher in ciphers:
             try:
-                data = cipher.data
-                name = self._filed_decrypt(data.get("name"))
-                password = self._filed_decrypt(data.get("password"))
-                username = self._filed_decrypt(data.get("username"))
-                url = self._filed_decrypt(data.get("uri"))
-                notes = self._filed_decrypt(data.get("notes"))
+                name = cipher.Name if cipher.Name else ""
+                password = self._filed_decrypt(cipher.login.get("password", ""))
+                username = self._filed_decrypt(cipher.login.get("username", ""))
+                url = self._filed_decrypt(cipher.login.get("uri", ""))
+                notes = self._filed_decrypt(cipher.notes if cipher.notes else "")
                 result.append(
                     BitwardenData(
                         name=name,
@@ -89,12 +88,12 @@ class BitwardenClient:
                 )
             except Exception as e:
                 output_log(
-                    f"Error decrypting cipher data: {e} for cipher {cipher}", "error"
+                    f"Error decrypting cipher data: {e} for cipher", "error"
                 )
                 continue
         return result
 
     def _filed_decrypt(self, field):
-        if field is None:
-            return None
+        if field is None or field == "":
+            return ""
         return decrypt(field, self._organization.key()).decode("utf-8")

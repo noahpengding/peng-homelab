@@ -771,7 +771,7 @@ requires-dist = [
     { name = "pydantic", specifier = "==2.10.6" },
     { name = "pydantic-core", specifier = "==2.27.2" },
     { name = "pyjwt", specifier = ">=2.10.1" },
-    { name = "python-vaultwarden", specifier = ">=1.0.1" },
+    { name = "python-vaultwarden", specifier = ">=1.0.4" },
     { name = "requests", specifier = "==2.32.3" },
     { name = "typing-extensions", specifier = "==4.12.2" },
     { name = "urllib3", specifier = "==2.3.0" },
@@ -942,7 +942,7 @@ wheels = [
 
 [[package]]
 name = "python-vaultwarden"
-version = "1.0.1"
+version = "1.0.4"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "hkdf" },
@@ -950,9 +950,9 @@ dependencies = [
     { name = "pycryptodome" },
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/c4/4b/cf4b35e0e52d01fc97d8e17feec6938329896ce6b22abcffddf95a23a6e9/python_vaultwarden-1.0.1.tar.gz", hash = "sha256:dc0c2ca92d83e26adcc3aa2d96b8bda81b9aa74479605ed54ad93dfea92cb245", size = 18528 }
+sdist = { url = "https://files.pythonhosted.org/packages/db/02/74e40c039e1cce4877b4097be5c6c28042bb3b6a6b74e08b7b4bd55a6bc2/python_vaultwarden-1.0.4.tar.gz", hash = "sha256:405bbefd23aed263522ada941d588f92778af632b2a5aded6400899315750b04", size = 18922 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/81/45/6a0bb616f96258e1f40fbf362cb8424444f89f1ac66f69a81874bfd5df55/python_vaultwarden-1.0.1-py3-none-any.whl", hash = "sha256:ff06b8a61047cc3e1669ef5a8cf26c5694811140073327feca5336c223f7a00a", size = 20769 },
+    { url = "https://files.pythonhosted.org/packages/58/b7/08f954b2f048d308ca7af6e61d3288bb9106a8ba1a9213306d9bc294b487/python_vaultwarden-1.0.4-py3-none-any.whl", hash = "sha256:2772de45ecceed550d028669554237651417d59bb56f3cefdf5429c062e26878", size = 21226 },
 ]
 
 [[package]]

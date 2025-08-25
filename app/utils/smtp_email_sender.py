@@ -70,6 +70,7 @@ class SmtpEmailSender:
         subject: str,
         body: str,
         attachments: Optional[List[Dict[str, Any]]] = None,
+        sent = True,
     ) -> bool:
         """Send an email using SMTP.
 

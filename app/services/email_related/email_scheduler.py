@@ -3,6 +3,8 @@ from typing import Dict, List, Optional, Any
 import time
 import pickle
 import re
+import pandas as pd
+import os
 
 from app.utils.imap_email_checker import ImapEmailChecker
 from app.utils.smtp_email_sender import SmtpEmailSender
@@ -33,6 +35,8 @@ class ScheduledEmail:
             attachments: Optional list of attachment dictionaries
         """
         self.from_address = from_address
+        if "<" in from_address and ">" in from_address:
+            self.from_address = re.search(r"<(.*?)>", from_address).group(1)
         self.to_address = to_address
         self.subject = subject
         self.body = body
@@ -105,6 +109,7 @@ def parse_scheduled_email(email_data: Dict[str, Any]) -> Optional[ScheduledEmail
     try:
         subject = email_data.get("subject", "")
         body = email_data.get("body", "")
+        from_address = email_data.get("from", "")
 
         # Split the body into lines
         lines = re.split(r"\r|\n", body)
@@ -113,17 +118,9 @@ def parse_scheduled_email(email_data: Dict[str, Any]) -> Optional[ScheduledEmail
             return None
         lines = list(filter(lambda x: x.strip() != "", lines))
 
-        # Parse the first three lines
-        from_line = lines[0].strip()
-        to_line = lines[1].strip()
-        time_line = lines[2].strip()
+        to_line = lines[0].strip()
+        time_line = lines[1].strip()
 
-        # Extract values
-        if not from_line.lower().startswith("from:"):
-            output_log(f"Invalid From line in scheduled email: {from_line}", "error")
-            from_address = email_data.get("from", "")
-        else:
-            from_address = re.search(r"\S+@\S+\.com", from_line[5:].strip()).group(0)
 
         if not to_line.lower().startswith("to:"):
             output_log(f"Invalid To line in scheduled email: {to_line}", "error")
@@ -142,8 +139,9 @@ def parse_scheduled_email(email_data: Dict[str, Any]) -> Optional[ScheduledEmail
             output_log(f"Invalid time format in scheduled email: {time_str}", "error")
             return None
 
-        # Get the remaining body (excluding the first three lines)
-        email_body = "\n".join(lines[3:])
+        # Get the remaining body (excluding the first two lines)
+        print(lines)
+        email_body = "\n\n".join(lines[2:])
 
         # Parse any attachments if present
         attachments = email_data.get("attachments", [])
@@ -162,47 +160,46 @@ def parse_scheduled_email(email_data: Dict[str, Any]) -> Optional[ScheduledEmail
         return None
 
 
-def save_scheduled_emails(emails: List[ScheduledEmail]) -> bool:
-    """Save scheduled emails to disk.
-
-    Args:
-        emails: List of ScheduledEmail objects
-
-    Returns:
-        bool: True if save successful, False otherwise
-    """
-    # Convert emails to dictionaries
-    emails_data = [email.to_dict() for email in emails]
-
-    # Save to file using pickle for datetime serialization
-    with open("email.pickle", "wb") as f:
-        pickle.dump(emails_data, f)
-
+def save_scheduled_emails(emails: List[ScheduledEmail]):
     minio = MinioStorage()
+    minio.file_download(f"{config.s3_base_path}/email/email_schedule.xlsx", "email_schedule.xlsx")
+    schedule_email_list = pd.read_excel("email_schedule.xlsx").to_dict(orient="records")
+    for email in emails:
+        current_time = datetime.datetime.now()
+        with open(f"email-{current_time}.pickle", "wb") as f:
+            pickle.dump(email, f)
+        
+        if minio.file_upload(
+            f"email-{current_time}.pickle",
+            f"{config.s3_base_path}/email/email-{current_time}.pickle",
+            "application/octet-stream",
+        ):
+            schedule_email_list.append({
+                "time": email.time_to_send,
+                "from": email.from_address,
+                "to": email.to_address,
+                "subject": email.subject,
+                "pickle_file": f"email-{current_time}.pickle",
+            })
+        else:
+            output_log(f"Failed to upload scheduled email {email.subject} to Minio", "error")
+    schedule_email_list_df = pd.DataFrame(schedule_email_list)
+    schedule_email_list_df.to_excel("email_schedule.xlsx", index=False)
     minio.file_upload(
-        "email.pickle", f"{config.email_path}/email.pickle", "application/octet-stream"
+        "email_schedule.xlsx",
+        f"{config.s3_base_path}/email/email_schedule.xlsx",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
     return True
 
-
-def load_scheduled_emails() -> List[ScheduledEmail]:
-    """Load scheduled emails from disk.
-
-    Returns:
-        List[ScheduledEmail]: List of ScheduledEmail objects
-    """
+def load_scheduled_emails_list() -> List[Dict[str, Any]]:
     minio = MinioStorage()
-    if not minio.file_download(f"{config.email_path}/email.pickle", "email.pickle"):
-        output_log("Failed to download scheduled emails from Minio", "error")
+    if not minio.file_download(f"{config.s3_base_path}/email/email_schedule.xlsx", "email_schedule.xlsx"):
         return []
-    with open("email.pickle", "rb") as f:
-        emails_data = pickle.load(f)
-    emails = [ScheduledEmail.from_dict(data) for data in emails_data]
-    output_log(f"Loaded {len(emails)} scheduled emails", "debug")
-    return emails
+    schedule_email_list = pd.read_excel("email_schedule.xlsx").to_dict(orient="records")
+    return schedule_email_list
 
-
-def check_scheduled_emails() -> None:
+def check_scheduled_emails():
     """Check for new scheduled emails in the configured IMAP account.
 
     This function:
@@ -231,20 +228,24 @@ def check_scheduled_emails() -> None:
         unread_emails = checker.get_unread_emails()
         checker.disconnect()
         if len(unread_emails) == 0:
-            return
+            return 0
 
-        # Load existing scheduled emails
-        scheduled_emails = load_scheduled_emails()
-
-        # Process each unread email
         for email_data in unread_emails:
-            # Parse the scheduled email
             scheduled_email = parse_scheduled_email(email_data)
             if scheduled_email:
-                scheduled_emails.append(scheduled_email)
-        save_scheduled_emails(scheduled_emails)
+                output_log(
+                    f"Scheduling email from {scheduled_email.from_address} to {scheduled_email.to_address} at {scheduled_email.time_to_send}",
+                    "info",
+                )
+                save_scheduled_emails([scheduled_email])
+            else:
+                output_log(
+                    f"Failed to parse scheduled email with subject: {email_data.get('subject', '')}",
+                    "error",
+                )
     except Exception as e:
         output_log(f"Error checking scheduled emails: {str(e)}", "error")
+    return len(unread_emails)
 
 
 def get_email_credentials(email_address: str, bw_data: BitwardenData) -> str:
@@ -281,101 +282,83 @@ def send_error_email(to_address: str, error_message: str, subject: str) -> None:
     )
 
 
-def process_scheduled_emails() -> None:
-    """Process scheduled emails that are due to be sent.
+def process_scheduled_emails():
+    output_log("Processing scheduled emails", "debug")
 
-    This function:
-    1. Loads scheduled emails
-    2. Checks which emails are due
-    3. Sends due emails
-    4. Removes sent emails from the list
-    5. Saves updated list
-    """
-    try:
-        output_log("Processing scheduled emails", "debug")
+    schedule_email_list = load_scheduled_emails_list()
+    previous_length = len(schedule_email_list)
+    if not schedule_email_list or len(schedule_email_list) == 0:
+        return
+    minio = MinioStorage()
+    current_time = datetime.datetime.now()
+    for item in schedule_email_list:
+        item["time"] = pd.to_datetime(item["time"])
+        if item["time"] <= current_time:
 
-        # Load scheduled emails
-        scheduled_emails = load_scheduled_emails()
-        if not scheduled_emails:
-            return
+            from_address = item["from"]
+            to_address = item["to"]
+            subject = item["subject"]
+            pickle_file = item["pickle_file"]
+            
+            if not minio.file_download(f"{config.s3_base_path}/email/{pickle_file}", pickle_file):
+                output_log(f"Failed to download scheduled email file {pickle_file} from Minio", "error")
+                continue
 
-        # Track which emails to keep (not sent yet)
-        emails_to_keep = []
-
-        # Process each scheduled email
-        for email_obj in scheduled_emails:
-            if email_obj.is_due():
-                output_log(
-                    f"Processing scheduled email {email_obj.id} to {email_obj.to_address}",
-                    "info",
+            bw = BitwardenClient()
+            credentials = get_email_credentials(from_address, bw.get_ciphers("Share"))
+            if not credentials:
+                output_log(f"No credentials found for {from_address}", "error")
+                send_error_email(
+                    from_address,
+                    f"No credentials found for {from_address}",
+                    subject,
                 )
-                # Get credentials from vaultwarden
-                bw = BitwardenClient()
-                credentials = get_email_credentials(
-                    email_obj.from_address, bw.get_ciphers("Email")
+                continue
+
+            with open(pickle_file, "rb") as f:
+                email_obj = pickle.load(f)
+            os.remove(pickle_file)
+            body = email_obj.body
+            attachments = email_obj.attachments
+            attempt = 0
+
+            while attempt < 5:
+                sender = SmtpEmailSender(
+                    username=from_address,
+                    password=credentials.password,
                 )
-                if not credentials:
-                    output_log(
-                        f"No credentials found for {email_obj.from_address}", "error"
-                    )
-                    send_error_email(
-                        email_obj.from_address,
-                        f"No credentials found for {email_obj.from_address}",
-                        email_obj.subject,
-                    )
-                    # Add back to list to try later
-                    emails_to_keep.append(email_obj)
-                    continue
-                # Send the email
-                try:
-                    print(f"{credentials.username} {credentials.password}")
-                    sender = SmtpEmailSender(credentials.username, credentials.password)
+                if sender.connect():
                     success = sender.send_email(
-                        email_obj.to_address,
-                        email_obj.subject,
-                        email_obj.body,
-                        email_obj.attachments,
+                        to_address=to_address,
+                        subject=subject,
+                        body=body,
+                        attachments=attachments,
                     )
-
                     if success:
-                        output_log(
-                            f"Scheduled email {email_obj.id} sent successfully", "debug"
-                        )
+                        output_log(f"Scheduled email sent to {to_address}", "info")
+                        break
                     else:
-                        output_log(
-                            f"Failed to send scheduled email {email_obj.id}", "error"
-                        )
-                        # Send notification about failure
-                        send_error_email(
-                            email_obj.from_address,
-                            f"Failed to send scheduled email {email_obj.id}",
-                            email_obj.subject,
-                        )
-                        # Keep in list to retry later if within 24 hours
-                        emails_to_keep.append(email_obj)
-                except Exception as e:
-                    output_log(
-                        f"Error sending scheduled email {email_obj.id}: {str(e)}",
-                        "error",
-                    )
-                    # Send notification about error
-                    send_error_email(
-                        email_obj.from_address,
-                        str(e),
-                        email_obj.subject,
-                        email_obj.to_address,
-                    )
-                    emails_to_keep.append(email_obj)
-            else:
-                # Not due yet, keep in the list
-                emails_to_keep.append(email_obj)
+                        output_log(f"Failed to send scheduled email to {to_address}, attempt {attempt + 1}", "warning")
+                else:
+                    output_log(f"Failed to connect to SMTP server for {from_address}, attempt {attempt + 1}", "warning")
+                attempt += 1
+                time.sleep(2 ** attempt)
 
-        # Save updated list of scheduled emails
-        if len(emails_to_keep) != len(scheduled_emails):
-            output_log(
-                f"Removed {len(scheduled_emails) - len(emails_to_keep)} sent emails",
-                "info",
-            )
-            save_scheduled_emails(emails_to_keep)
-    except Exception as e:
-        output_log(f"Error processing scheduled emails: {str(e)}", "error")
+            if attempt == 5:
+                output_log(f"Failed to send scheduled email to {to_address} after 5 attempts", "error")
+                send_error_email(
+                    from_address,
+                    f"Failed to send scheduled email to {to_address} after 5 attempts",
+                    subject,
+                )
+            else:
+                minio.remove_file(f"{config.s3_base_path}/email/{pickle_file}")
+                schedule_email_list.remove(item)
+    schedule_email_list_df = pd.DataFrame(schedule_email_list)
+    schedule_email_list_df.to_excel("email_schedule.xlsx", index=False)
+    minio.file_upload(
+        "email_schedule.xlsx",
+        f"{config.s3_base_path}/email/email_schedule.xlsx",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+    return previous_length - len(schedule_email_list)

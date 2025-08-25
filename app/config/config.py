@@ -1,6 +1,5 @@
 import os
 from pydantic import BaseModel, ValidationError
-from typing import List
 
 
 class Config(BaseModel):
