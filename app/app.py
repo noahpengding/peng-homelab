@@ -125,8 +125,8 @@ async def get_password(request: Request, auth: dict = Depends(authenticate_reque
         if not password:
             raise HTTPException(status_code=404, detail="Password not found")
     elif url != "":
-        passwords = get_passwords_by_url(url)
-        if not passwords:
+        password = get_passwords_by_url(url)
+        if not password:
             raise HTTPException(status_code=404, detail="Password not found")
     else:
         raise HTTPException(status_code=422, detail="Empty name or url")

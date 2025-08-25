@@ -336,6 +336,8 @@ def process_scheduled_emails():
                     )
                     if success:
                         output_log(f"Scheduled email sent to {to_address}", "info")
+                        minio.remove_file(f"{config.s3_base_path}/email/{pickle_file}")
+                        schedule_email_list.remove(item)
                         break
                     else:
                         output_log(f"Failed to send scheduled email to {to_address}, attempt {attempt + 1}", "warning")
@@ -343,17 +345,7 @@ def process_scheduled_emails():
                     output_log(f"Failed to connect to SMTP server for {from_address}, attempt {attempt + 1}", "warning")
                 attempt += 1
                 time.sleep(2 ** attempt)
-
-            if attempt == 5:
-                output_log(f"Failed to send scheduled email to {to_address} after 5 attempts", "error")
-                send_error_email(
-                    from_address,
-                    f"Failed to send scheduled email to {to_address} after 5 attempts",
-                    subject,
-                )
-            else:
-                minio.remove_file(f"{config.s3_base_path}/email/{pickle_file}")
-                schedule_email_list.remove(item)
+                
     schedule_email_list_df = pd.DataFrame(schedule_email_list)
     schedule_email_list_df.to_excel("email_schedule.xlsx", index=False)
     minio.file_upload(
