@@ -17,7 +17,7 @@ class MinioStorage:
             self.entrypoint,
             access_key=self.access_key,
             secret_key=self.secret_key,
-            secure=True,
+            secure=False,
         )
 
     def file_upload(
