@@ -27,6 +27,7 @@ app.add_middleware(
     allow_headers=["Content-Type", "Accept", "Authorization"],
 )
 
+
 @app.get("/")
 async def read_root():
     return {
@@ -34,6 +35,7 @@ async def read_root():
         "version": __version__,
         "author": __author__,
     }
+
 
 @app.post("/signup")
 async def sign_up(request: Request):
@@ -48,6 +50,7 @@ async def sign_up(request: Request):
     if not response:
         raise HTTPException(status_code=400, detail="User Creation Failed")
     return response
+
 
 @app.post("/login")
 async def login(request: Request):
@@ -64,6 +67,7 @@ async def login(request: Request):
         "api_token": user_login.get("api_token", ""),
         "token_type": "bearer",
     }
+
 
 @app.get("/ip")
 async def get_ip(request: Request, auth: dict = Depends(authenticate_request)):
@@ -85,6 +89,7 @@ async def get_ip(request: Request, auth: dict = Depends(authenticate_request)):
         media_type="application/json",
     )
 
+
 @app.post("/ip")
 async def update_ip(request: Request, auth: dict = Depends(authenticate_request)):
     from app.services.ip_update.ip_test import update_dns
@@ -104,6 +109,7 @@ async def update_ip(request: Request, auth: dict = Depends(authenticate_request)
         },
         media_type="application/json",
     )
+
 
 @app.get("/password")
 async def get_password(request: Request, auth: dict = Depends(authenticate_request)):
@@ -142,6 +148,7 @@ async def get_password(request: Request, auth: dict = Depends(authenticate_reque
         media_type="application/json",
     )
 
+
 @app.post("/email_send")
 async def email_send(request: Request, auth: dict = Depends(authenticate_request)):
     from app.services.email_related.email_send import email_send
@@ -165,10 +172,11 @@ async def email_send(request: Request, auth: dict = Depends(authenticate_request
             "from_address": from_address,
             "to_address": to_address,
             "subject": subject,
-            "message": "Email sent successfully"
+            "message": "Email sent successfully",
         },
         media_type="application/json",
     )
+
 
 @app.post("/check_scheduled_emails")
 async def check_scheduled_emails_endpoint(
@@ -187,7 +195,8 @@ async def check_scheduled_emails_endpoint(
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error checking emails: {str(e)}")
-    
+
+
 @app.post("/process_scheduled_emails")
 async def process_scheduled_emails_endpoint(
     request: Request, auth: dict = Depends(authenticate_request)
@@ -204,4 +213,6 @@ async def process_scheduled_emails_endpoint(
             media_type="application/json",
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error processing emails: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Error processing emails: {str(e)}"
+        )

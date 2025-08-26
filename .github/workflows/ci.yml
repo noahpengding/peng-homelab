@@ -6,7 +6,7 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ghcr.io/${{ github.repository }}
-  VERSION: v2.0.0
+  VERSION: v2.0.1
 
 jobs:
   # Code quality check - runs on all branches

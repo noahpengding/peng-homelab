@@ -44,4 +44,10 @@ class Cloudflare:
         for record in records:
             output_log(record, "debug")
             if record["type"] == "A" and record["content"] == current_ip:
-                self._update_dns_record(record["id"], new_ip, record["name"], record["ttl"], record["proxied"])
+                self._update_dns_record(
+                    record["id"],
+                    new_ip,
+                    record["name"],
+                    record["ttl"],
+                    record["proxied"],
+                )

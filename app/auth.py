@@ -27,11 +27,13 @@ def authenticate_user(username: str, password: str) -> Optional[Dict]:
         minio.file_download(f"{config.s3_base_path}/user.xlsx", "user.xlsx")
         user_records = pd.read_excel("user.xlsx").to_dict(orient="records")
         os.remove("user.xlsx")
-        user = next((user for user in user_records if user["user_name"] == username), [])
+        user = next(
+            (user for user in user_records if user["user_name"] == username), []
+        )
         if not user or len(user) == 0:
             output_log(f"User not found: {username}", "warning")
             return None
-        
+
         if verify_password(password, user["password"]):
             api_key = create_access_token({"sub": username}, expiration_days=7)
             return {
@@ -53,19 +55,27 @@ def create_user(user_name: str, password: str, admin_password: str) -> Optional[
         minio = MinioStorage()
         minio.file_download(f"{config.s3_base_path}/user.xlsx", "user.xlsx")
         user_records = pd.read_excel("user.xlsx").to_dict(orient="records")
-        user = next((user for user in user_records if user["user_name"] == user_name), [])
+        user = next(
+            (user for user in user_records if user["user_name"] == user_name), []
+        )
         if user and len(user) > 0:
             output_log(f"User already exists: {user_name}", "warning")
             raise HTTPException(status_code=400, detail="User already exists")
         hashed_password = get_password_hash(password)
         api_token = create_access_token({"sub": user_name}, None)
-        user_records.append({
-            "user_name": user_name,
-            "password": hashed_password,
-        })
+        user_records.append(
+            {
+                "user_name": user_name,
+                "password": hashed_password,
+            }
+        )
         df = pd.DataFrame(user_records)
         df.to_excel("user.xlsx", index=False)
-        minio.file_upload("user.xlsx", f"{config.s3_base_path}/user.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        minio.file_upload(
+            "user.xlsx",
+            f"{config.s3_base_path}/user.xlsx",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
         return {
             "user_name": user_name,
             "password": hashed_password,
@@ -74,6 +84,7 @@ def create_user(user_name: str, password: str, admin_password: str) -> Optional[
     except Exception as e:
         output_log(f"User creation error: {str(e)}", "error")
         return None
+
 
 def create_access_token(data: dict, expiration_days: int) -> str:
     to_encode = data.copy()

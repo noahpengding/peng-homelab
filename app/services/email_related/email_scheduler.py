@@ -121,11 +121,15 @@ def parse_scheduled_email(email_data: Dict[str, Any]) -> Optional[ScheduledEmail
         to_line = lines[0].strip()
         time_line = lines[1].strip()
 
-
         if not to_line.lower().startswith("to:"):
             output_log(f"Invalid To line in scheduled email: {to_line}", "error")
             return None
-        to_address = re.search(r"\S+@\S+\.com", to_line[3:].strip()).group(0)
+        if not re.match(r"\S+@\S+\.\S+", to_line[3:].strip()):
+            output_log(
+                f"Invalid To email address in scheduled email: {to_line}", "error"
+            )
+            return None
+        to_address = re.search(r"\S+@\S+\.\S+", to_line[3:].strip()).group(0)
 
         if not time_line.lower().startswith("time:"):
             output_log(f"Invalid Time line in scheduled email: {time_line}", "error")
@@ -162,27 +166,33 @@ def parse_scheduled_email(email_data: Dict[str, Any]) -> Optional[ScheduledEmail
 
 def save_scheduled_emails(emails: List[ScheduledEmail]):
     minio = MinioStorage()
-    minio.file_download(f"{config.s3_base_path}/email/email_schedule.xlsx", "email_schedule.xlsx")
+    minio.file_download(
+        f"{config.s3_base_path}/email/email_schedule.xlsx", "email_schedule.xlsx"
+    )
     schedule_email_list = pd.read_excel("email_schedule.xlsx").to_dict(orient="records")
     for email in emails:
         current_time = datetime.datetime.now()
         with open(f"email-{current_time}.pickle", "wb") as f:
             pickle.dump(email, f)
-        
+
         if minio.file_upload(
             f"email-{current_time}.pickle",
             f"{config.s3_base_path}/email/email-{current_time}.pickle",
             "application/octet-stream",
         ):
-            schedule_email_list.append({
-                "time": email.time_to_send,
-                "from": email.from_address,
-                "to": email.to_address,
-                "subject": email.subject,
-                "pickle_file": f"email-{current_time}.pickle",
-            })
+            schedule_email_list.append(
+                {
+                    "time": email.time_to_send,
+                    "from": email.from_address,
+                    "to": email.to_address,
+                    "subject": email.subject,
+                    "pickle_file": f"email-{current_time}.pickle",
+                }
+            )
         else:
-            output_log(f"Failed to upload scheduled email {email.subject} to Minio", "error")
+            output_log(
+                f"Failed to upload scheduled email {email.subject} to Minio", "error"
+            )
     schedule_email_list_df = pd.DataFrame(schedule_email_list)
     schedule_email_list_df.to_excel("email_schedule.xlsx", index=False)
     minio.file_upload(
@@ -192,12 +202,16 @@ def save_scheduled_emails(emails: List[ScheduledEmail]):
     )
     return True
 
+
 def load_scheduled_emails_list() -> List[Dict[str, Any]]:
     minio = MinioStorage()
-    if not minio.file_download(f"{config.s3_base_path}/email/email_schedule.xlsx", "email_schedule.xlsx"):
+    if not minio.file_download(
+        f"{config.s3_base_path}/email/email_schedule.xlsx", "email_schedule.xlsx"
+    ):
         return []
     schedule_email_list = pd.read_excel("email_schedule.xlsx").to_dict(orient="records")
     return schedule_email_list
+
 
 def check_scheduled_emails():
     """Check for new scheduled emails in the configured IMAP account.
@@ -294,14 +308,18 @@ def process_scheduled_emails():
     for item in schedule_email_list:
         item["time"] = pd.to_datetime(item["time"])
         if item["time"] <= current_time:
-
             from_address = item["from"]
             to_address = item["to"]
             subject = item["subject"]
             pickle_file = item["pickle_file"]
-            
-            if not minio.file_download(f"{config.s3_base_path}/email/{pickle_file}", pickle_file):
-                output_log(f"Failed to download scheduled email file {pickle_file} from Minio", "error")
+
+            if not minio.file_download(
+                f"{config.s3_base_path}/email/{pickle_file}", pickle_file
+            ):
+                output_log(
+                    f"Failed to download scheduled email file {pickle_file} from Minio",
+                    "error",
+                )
                 continue
 
             bw = BitwardenClient()
@@ -340,12 +358,18 @@ def process_scheduled_emails():
                         schedule_email_list.remove(item)
                         break
                     else:
-                        output_log(f"Failed to send scheduled email to {to_address}, attempt {attempt + 1}", "warning")
+                        output_log(
+                            f"Failed to send scheduled email to {to_address}, attempt {attempt + 1}",
+                            "warning",
+                        )
                 else:
-                    output_log(f"Failed to connect to SMTP server for {from_address}, attempt {attempt + 1}", "warning")
+                    output_log(
+                        f"Failed to connect to SMTP server for {from_address}, attempt {attempt + 1}",
+                        "warning",
+                    )
                 attempt += 1
-                time.sleep(2 ** attempt)
-                
+                time.sleep(2**attempt)
+
     schedule_email_list_df = pd.DataFrame(schedule_email_list)
     schedule_email_list_df.to_excel("email_schedule.xlsx", index=False)
     minio.file_upload(

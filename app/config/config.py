@@ -42,8 +42,12 @@ try:
         "app_name": os.environ.get("app_name") or "Peng-Homelab",
         "host": os.environ.get("host") if os.environ.get("host") else "0.0.0.0",
         "port": int(os.environ.get("port")) if os.environ.get("port") else 8000,
-        "admin_password": os.environ.get("admin_password") if os.environ.get("admin_password") else "admin123",
-        "jwt_secret_key": os.environ.get("jwt_secret_key") if os.environ.get("jwt_secret_key") else "your_secret_key",
+        "admin_password": os.environ.get("admin_password")
+        if os.environ.get("admin_password")
+        else "admin123",
+        "jwt_secret_key": os.environ.get("jwt_secret_key")
+        if os.environ.get("jwt_secret_key")
+        else "your_secret_key",
         "imap_server": os.environ.get("imap_server")
         if os.environ.get("imap_server")
         else "imap.gmail.com",
@@ -99,7 +103,9 @@ try:
         if os.environ.get("s3_secret_key")
         else "",
         "s3_bucket": os.environ.get("s3_bucket") if os.environ.get("s3_bucket") else "",
-        "s3_base_path": os.environ.get("s3_base_path") if os.environ.get("s3_base_path") else "homelab",
+        "s3_base_path": os.environ.get("s3_base_path")
+        if os.environ.get("s3_base_path")
+        else "homelab",
         "email_path": os.environ.get("email_path")
         if os.environ.get("email_path")
         else "/tmp",
