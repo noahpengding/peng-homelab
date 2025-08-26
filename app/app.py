@@ -216,3 +216,32 @@ async def process_scheduled_emails_endpoint(
         raise HTTPException(
             status_code=500, detail=f"Error processing emails: {str(e)}"
         )
+
+
+@app.post("/update_service")
+async def update_service(request: Request, auth: dict = Depends(authenticate_request)):
+    from app.services.homelab_services.homelab_services_update import (
+        update_homelab_services,
+    )
+
+    data = await request.json()
+    service_name = data.get("service_name", "")
+    old_image_id = data.get("old_image_id", "")
+    new_image_id = data.get("new_image_id", "")
+    if service_name == "" or old_image_id == "" or new_image_id == "":
+        raise HTTPException(
+            status_code=422, detail="Empty service_name, old_image_id or new_image_id"
+        )
+    success = update_homelab_services(service_name, old_image_id, new_image_id)
+    if not success:
+        raise HTTPException(status_code=500, detail="Service update failed")
+    return JSONResponse(
+        status_code=200,
+        content={
+            "service_name": service_name,
+            "old_image_id": old_image_id,
+            "new_image_id": new_image_id,
+            "message": "Service updated successfully",
+        },
+        media_type="application/json",
+    )
