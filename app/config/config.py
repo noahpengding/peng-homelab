@@ -30,6 +30,7 @@ class Config(BaseModel):
     s3_url: str
     s3_access_key: str
     s3_secret_key: str
+    s3_region: str
     s3_bucket: str
     s3_base_path: str
     email_path: str
@@ -102,6 +103,7 @@ try:
         "s3_secret_key": os.environ.get("s3_secret_key")
         if os.environ.get("s3_secret_key")
         else "",
+        "s3_region": os.environ.get("s3_region") if os.environ.get("s3_region") else "",
         "s3_bucket": os.environ.get("s3_bucket") if os.environ.get("s3_bucket") else "",
         "s3_base_path": os.environ.get("s3_base_path")
         if os.environ.get("s3_base_path")

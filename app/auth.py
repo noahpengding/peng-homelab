@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict
 from passlib.context import CryptContext
 from app.utils.log import output_log
-from app.utils.minio_connection import MinioStorage
+from app.utils.s3_connection import S3Storage
 from app.config.config import config
 from fastapi import HTTPException, Request
 import jwt
@@ -23,8 +23,8 @@ def get_password_hash(password: str) -> str:
 
 def authenticate_user(username: str, password: str) -> Optional[Dict]:
     try:
-        minio = MinioStorage()
-        minio.file_download(f"{config.s3_base_path}/user.xlsx", "user.xlsx")
+        s3 = S3Storage()
+        s3.file_download(f"{config.s3_base_path}/user.xlsx", "user.xlsx")
         user_records = pd.read_excel("user.xlsx").to_dict(orient="records")
         os.remove("user.xlsx")
         user = next(
@@ -52,8 +52,8 @@ def create_user(user_name: str, password: str, admin_password: str) -> Optional[
         if not admin_password == config.admin_password:
             output_log("Admin password is incorrect", "error")
             raise HTTPException(status_code=403, detail="Admin password is incorrect")
-        minio = MinioStorage()
-        minio.file_download(f"{config.s3_base_path}/user.xlsx", "user.xlsx")
+        s3 = S3Storage()
+        s3.file_download(f"{config.s3_base_path}/user.xlsx", "user.xlsx")
         user_records = pd.read_excel("user.xlsx").to_dict(orient="records")
         user = next(
             (user for user in user_records if user["user_name"] == user_name), []
@@ -71,7 +71,7 @@ def create_user(user_name: str, password: str, admin_password: str) -> Optional[
         )
         df = pd.DataFrame(user_records)
         df.to_excel("user.xlsx", index=False)
-        minio.file_upload(
+        s3.file_upload(
             "user.xlsx",
             f"{config.s3_base_path}/user.xlsx",
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

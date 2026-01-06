@@ -9,7 +9,7 @@ import os
 from app.utils.imap_email_checker import ImapEmailChecker
 from app.utils.smtp_email_sender import SmtpEmailSender
 from app.utils.vaultwarden_client import BitwardenClient, BitwardenData
-from app.utils.minio_connection import MinioStorage
+from app.utils.s3_connection import S3Storage
 from app.config.config import config
 from app.utils.log import output_log
 
@@ -165,8 +165,8 @@ def parse_scheduled_email(email_data: Dict[str, Any]) -> Optional[ScheduledEmail
 
 
 def save_scheduled_emails(emails: List[ScheduledEmail]):
-    minio = MinioStorage()
-    minio.file_download(
+    s3 = S3Storage()
+    s3.file_download(
         f"{config.s3_base_path}/email/email_schedule.xlsx", "email_schedule.xlsx"
     )
     schedule_email_list = pd.read_excel("email_schedule.xlsx").to_dict(orient="records")
@@ -175,7 +175,7 @@ def save_scheduled_emails(emails: List[ScheduledEmail]):
         with open(f"email-{current_time}.pickle", "wb") as f:
             pickle.dump(email, f)
 
-        if minio.file_upload(
+        if s3.file_upload(
             f"email-{current_time}.pickle",
             f"{config.s3_base_path}/email/email-{current_time}.pickle",
             "application/octet-stream",
@@ -191,11 +191,11 @@ def save_scheduled_emails(emails: List[ScheduledEmail]):
             )
         else:
             output_log(
-                f"Failed to upload scheduled email {email.subject} to Minio", "error"
+                f"Failed to upload scheduled email {email.subject} to S3", "error"
             )
     schedule_email_list_df = pd.DataFrame(schedule_email_list)
     schedule_email_list_df.to_excel("email_schedule.xlsx", index=False)
-    minio.file_upload(
+    s3.file_upload(
         "email_schedule.xlsx",
         f"{config.s3_base_path}/email/email_schedule.xlsx",
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -204,8 +204,8 @@ def save_scheduled_emails(emails: List[ScheduledEmail]):
 
 
 def load_scheduled_emails_list() -> List[Dict[str, Any]]:
-    minio = MinioStorage()
-    if not minio.file_download(
+    s3 = S3Storage()
+    if not s3.file_download(
         f"{config.s3_base_path}/email/email_schedule.xlsx", "email_schedule.xlsx"
     ):
         return []
@@ -303,7 +303,7 @@ def process_scheduled_emails():
     previous_length = len(schedule_email_list)
     if not schedule_email_list or len(schedule_email_list) == 0:
         return
-    minio = MinioStorage()
+    s3 = S3Storage()
     current_time = datetime.datetime.now()
     for item in schedule_email_list:
         item["time"] = pd.to_datetime(item["time"])
@@ -313,11 +313,11 @@ def process_scheduled_emails():
             subject = item["subject"]
             pickle_file = item["pickle_file"]
 
-            if not minio.file_download(
+            if not s3.file_download(
                 f"{config.s3_base_path}/email/{pickle_file}", pickle_file
             ):
                 output_log(
-                    f"Failed to download scheduled email file {pickle_file} from Minio",
+                    f"Failed to download scheduled email file {pickle_file} from S3",
                     "error",
                 )
                 continue
@@ -354,7 +354,7 @@ def process_scheduled_emails():
                     )
                     if success:
                         output_log(f"Scheduled email sent to {to_address}", "info")
-                        minio.remove_file(f"{config.s3_base_path}/email/{pickle_file}")
+                        s3.remove_file(f"{config.s3_base_path}/email/{pickle_file}")
                         schedule_email_list.remove(item)
                         break
                     else:
@@ -372,7 +372,7 @@ def process_scheduled_emails():
 
     schedule_email_list_df = pd.DataFrame(schedule_email_list)
     schedule_email_list_df.to_excel("email_schedule.xlsx", index=False)
-    minio.file_upload(
+    s3.file_upload(
         "email_schedule.xlsx",
         f"{config.s3_base_path}/email/email_schedule.xlsx",
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
