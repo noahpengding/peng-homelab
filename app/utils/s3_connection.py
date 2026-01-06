@@ -10,8 +10,9 @@ class S3Storage:
         self.endpoint_url = config.s3_url
         self.access_key = config.s3_access_key
         self.secret_key = config.s3_secret_key
+        self.region = config.s3_region
         output_log(
-            f"S3 connection initialized to {self.endpoint_url}",
+            f"S3 connection to {self.endpoint_url} with {self.access_key} and {self.secret_key}",
             "debug",
         )
         self.client = boto3.client(
@@ -19,6 +20,7 @@ class S3Storage:
             endpoint_url=self.endpoint_url,
             aws_access_key_id=self.access_key,
             aws_secret_access_key=self.secret_key,
+            region_name=self.region,
         )
 
     def file_upload(
@@ -63,10 +65,8 @@ class S3Storage:
     def file_exists(self, file_name, bucket_name=config.s3_bucket):
         try:
             file_name = file_name.replace("\\", "/")
-            self.client.head_object(Bucket=bucket_name, Key=file_name)
-            return True
-        except ClientError as e:
-            output_log(f"ClientError checking file from S3: {e}", "error")
+            return self.client.head_object(Bucket=bucket_name, Key=file_name)
+        except ClientError:
             return False
         except Exception as e:
             output_log(f"Error checking file from S3: {e}", "error")
