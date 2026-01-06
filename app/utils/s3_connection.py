@@ -65,7 +65,8 @@ class S3Storage:
             file_name = file_name.replace("\\", "/")
             self.client.head_object(Bucket=bucket_name, Key=file_name)
             return True
-        except ClientError:
+        except ClientError as e:
+            output_log(f"ClientError checking file from S3: {e}", "error")
             return False
         except Exception as e:
             output_log(f"Error checking file from S3: {e}", "error")
