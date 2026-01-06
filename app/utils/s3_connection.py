@@ -63,7 +63,8 @@ class S3Storage:
     def file_exists(self, file_name, bucket_name=config.s3_bucket):
         try:
             file_name = file_name.replace("\\", "/")
-            return self.client.head_object(Bucket=bucket_name, Key=file_name)
+            self.client.head_object(Bucket=bucket_name, Key=file_name)
+            return True
         except ClientError:
             return False
         except Exception as e:
