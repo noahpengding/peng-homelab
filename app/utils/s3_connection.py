@@ -11,7 +11,7 @@ class S3Storage:
         self.access_key = config.s3_access_key
         self.secret_key = config.s3_secret_key
         output_log(
-            f"S3 connection to {self.endpoint_url} with {self.access_key} and {self.secret_key}",
+            f"S3 connection initialized to {self.endpoint_url}",
             "debug",
         )
         self.client = boto3.client(
