@@ -1,18 +1,18 @@
-from app.utils.minio_connection import MinioStorage
+from app.utils.s3_connection import S3Storage
 from app.utils.log import output_log
 from app.config.config import config
 import pandas as pd
 import os
 
 def _get_zone_result() -> dict:
-    minio = MinioStorage()
+    s3 = S3Storage()
     try:
-        minio.file_download(f"{config.s3_base_path}/cloudflare_dns.xlsx", "zone_id.xlsx")
+        s3.file_download(f"{config.s3_base_path}/cloudflare_dns.xlsx", "zone_id.xlsx")
         df = pd.read_excel("zone_id.xlsx").to_dict(orient="records")
         os.remove("zone_id.xlsx")
         return df
     except Exception as e:
-        output_log(f"Error getting zone info from Minio: {e}", "error")
+        output_log(f"Error getting zone info from S3: {e}", "error")
         return {}
 
 def get_dns_result(record_name):
